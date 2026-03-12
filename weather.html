@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather Dashboard</title>
+
+<style>
+
+body{
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg,#4facfe,#00f2fe);
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
+
+h1{
+    color:white;
+    margin-top:30px;
+}
+
+.container{
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+    justify-content:center;
+    margin-top:40px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    width:220px;
+    text-align:center;
+    box-shadow:0 8px 20px rgba(0,0,0,0.2);
+    transition:transform 0.3s;
+}
+
+.card:hover{
+    transform:translateY(-5px);
+}
+
+.temp{
+    font-size:32px;
+    font-weight:bold;
+}
+
+.emoji{
+    font-size:40px;
+}
+
+.spinner{
+    margin-top:40px;
+    border:6px solid #f3f3f3;
+    border-top:6px solid #333;
+    border-radius:50%;
+    width:40px;
+    height:40px;
+    animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+    0%{transform:rotate(0deg);}
+    100%{transform:rotate(360deg);}
+}
+
+.error{
+    color:red;
+    margin-top:20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Weather Dashboard</h1>
+
+<div id="loading" class="spinner"></div>
+
+<div id="error" class="error"></div>
+
+<div class="container" id="weatherContainer"></div>
+
+
+<script>
+
+const cities = [
+    {name:"Delhi", lat:28.6139, lon:77.2090},
+    {name:"indore", lat:51.5072, lon:-0.1276},
+    {name:"chennai", lat:40.7128, lon:-74.0060}
+];
+
+function weatherEmoji(code){
+
+    if(code === 0) return "☀️ Clear";
+    if(code <= 3) return "⛅ Partly Cloudy";
+    if(code <= 48) return "☁️ Cloudy";
+    if(code <= 67) return "🌧 Rain";
+    if(code <= 77) return "❄️ Snow";
+    if(code <= 99) return "⛈ Storm";
+
+    return "🌍 Unknown";
+}
+
+async function fetchWeather(){
+
+    const loading = document.getElementById("loading");
+    const container = document.getElementById("weatherContainer");
+    const errorBox = document.getElementById("error");
+
+    try{
+
+        const requests = cities.map(city => 
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true`)
+            .then(res => {
+                if(!res.ok){
+                    throw new Error("API error");
+                }
+                return res.json();
+            })
+        );
+
+        const results = await Promise.all(requests);
+
+        loading.style.display = "none";
+
+        results.forEach((data,index)=>{
+
+            const city = cities[index];
+
+            const temp = data.current_weather.temperature;
+            const code = data.current_weather.weathercode;
+
+            const card = document.createElement("div");
+            card.className = "card";
+
+            card.innerHTML = `
+                <h2>${city.name}</h2>
+                <div class="emoji">${weatherEmoji(code).split(" ")[0]}</div>
+                <div class="temp">${temp}°C</div>
+                <p>${weatherEmoji(code).split(" ").slice(1).join(" ")}</p>
+            `;
+
+            container.appendChild(card);
+
+        });
+
+    }catch(err){
+
+        loading.style.display = "none";
+        errorBox.textContent = "Failed to fetch weather data.";
+
+        console.error(err);
+    }
+}
+
+fetchWeather();
+
+</script>
+
+</body>
+</html>
