@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title> News </title>
+
+
+</head>
+
+<body>
+
+<h1>📰  News</h1>
+
+<div class="search">
+
+<input id="searchInput" placeholder="Search topic..." />
+
+<button onclick="fetchNews()">Search</button>
+
+</div>
+
+<div id="news-container"></div>
+
+<script>
+
+const container = document.getElementById("news-container");
+
+async function fetchNews(){
+
+let query = document.getElementById("searchInput").value;
+
+if(query===""){
+query="popular";
+}
+
+container.innerHTML="<div class='loading'>Loading...</div>";
+
+try{
+
+const response = await fetch(`https://hn.algolia.com/api/v1/search?query=${query}`);
+
+const data = await response.json();
+
+container.innerHTML="";
+
+data.hits.forEach(article=>{
+
+const card=document.createElement("div");
+card.className="card";
+
+card.innerHTML=`
+<h3>${article.title || "No Title"}</h3>
+<p>Author: ${article.author}</p>
+<p>Points: ${article.points || 0}</p>
+<a href="${article.url}" target="_blank">Read Article</a>
+`;
+
+container.appendChild(card);
+
+});
+
+}
+catch(error){
+
+container.innerHTML="Failed to load news";
+
+}
+
+}
+
+window.onload = fetchNews;
+
+</script>
+
+</body>
+</html>
